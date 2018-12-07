@@ -1,5 +1,8 @@
-HTMLTestRunner is an extension to the Python standard library's unittest module.
-It generates easy to use HTML test reports. HTMLTestRunner is released under a
-BSD style license.
+HTMLTestRunner is an extension to the Python standard library's unittest module by Wai Yip Tung.
 
-Only a single file module HTMLTestRunner.py is needed to generate your report.
+This is my own modification of it.
+
+Replaced the test runner by Wai Yip Tung, by runner.py to generate report.
+
+To do:
+	* The HTML report should also contain the number of skipped tests.
