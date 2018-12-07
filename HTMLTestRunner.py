@@ -71,8 +71,9 @@ __version__ = "0.8.3"
 """
 Change History
 
-Version 0.8.3
-* Prevent crash on class or module-level exceptions (Darren Wurf).
+Version 0.8.3 (by K. Kiekens)
+* Modification for Python 3.x
+* Modified html report. Added link for code coverage and reference to the git repo and submodules.
 
 Version 0.8.2
 * Show output inline instead of popup window (Viorel Lupu).
@@ -94,7 +95,8 @@ Version in 0.7.1
 # TODO: simplify javascript using ,ore than 1 class in the class attribute?
 
 import datetime
-import StringIO
+#from io import StringIO
+import io
 import sys
 import time
 import unittest
@@ -112,23 +114,15 @@ from xml.sax import saxutils
 #   >>> logging.basicConfig(stream=HTMLTestRunner.stdout_redirector)
 #   >>>
 
-def to_unicode(s):
-    try:
-        return unicode(s)
-    except UnicodeDecodeError:
-        # s is non ascii byte string
-        return s.decode('unicode_escape')
-
 class OutputRedirector(object):
     """ Wrapper to redirect stdout or stderr """
     def __init__(self, fp):
         self.fp = fp
 
     def write(self, s):
-        self.fp.write(to_unicode(s))
+        self.fp.write(s)
 
     def writelines(self, lines):
-        lines = map(to_unicode, lines)
         self.fp.writelines(lines)
 
     def flush(self):
@@ -321,6 +315,7 @@ body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%
 table       { font-size: 100%; }
 pre         { }
 
+
 /* -- heading ---------------------------------------------------------------------- */
 h1 {
 	font-size: 16pt;
@@ -410,13 +405,46 @@ a.popup_link:hover {
     HEADING_TMPL = """<div class='heading'>
 <h1>%(title)s</h1>
 %(parameters)s
+<p class='attribute'><strong>Coverage:</strong><a href='coverage/index.html'> View code coverage during test execution.</a></p>
+
 <p class='description'>%(description)s</p>
+</tbody>
+</table>
+
 </div>
 
 """ # variables: (title, parameters, description)
 
     HEADING_ATTRIBUTE_TMPL = """<p class='attribute'><strong>%(name)s:</strong> %(value)s</p>
 """ # variables: (name, value)
+    
+
+
+    HEADING_TABLE_REPO_HEADER_ROW = """
+    <table>
+    <colgroup>
+    <col align='left' />
+    <col align='right' />
+    <col align='right' />
+    </colgroup>
+    <tr id='header_row'>
+    <td><strong>Repo</strong></td>
+    <td><strong>Branch</strong></td>  
+    <td><strong>Hash</strong></td> 
+    </tr>
+""" # variables: (repo, rhead,rhash)
+    
+    
+    HEADING_TABLE_REPO_ROW = """
+    <tr>
+    <td>%(repo)s</td>
+    <td>%(rhead)s</td>  
+    <td><a title='%(rhash)s'>%(rhashshort)s</a></td>  
+    </tr>
+""" # variables: (repo, rhead,rhash)
+
+
+
 
 
 
@@ -527,11 +555,11 @@ class _TestResult(TestResult):
 
     def __init__(self, verbosity=1):
         TestResult.__init__(self)
-        self.outputBuffer = StringIO.StringIO()
         self.stdout0 = None
         self.stderr0 = None
         self.success_count = 0
         self.failure_count = 0
+        self.skipped_count = 0
         self.error_count = 0
         self.verbosity = verbosity
 
@@ -548,6 +576,7 @@ class _TestResult(TestResult):
     def startTest(self, test):
         TestResult.startTest(self, test)
         # just one buffer for both stdout and stderr
+        self.outputBuffer = io.StringIO()
         stdout_redirector.fp = self.outputBuffer
         stderr_redirector.fp = self.outputBuffer
         self.stdout0 = sys.stdout
@@ -581,6 +610,7 @@ class _TestResult(TestResult):
         TestResult.addSuccess(self, test)
         output = self.complete_output()
         self.result.append((0, test, output, ''))
+        print(output)
         if self.verbosity > 1:
             sys.stderr.write('ok ')
             sys.stderr.write(str(test))
@@ -618,7 +648,7 @@ class _TestResult(TestResult):
 class HTMLTestRunner(Template_mixin):
     """
     """
-    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None):
+    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None,rlist=None):
         self.stream = stream
         self.verbosity = verbosity
         if title is None:
@@ -629,6 +659,11 @@ class HTMLTestRunner(Template_mixin):
             self.description = self.DEFAULT_DESCRIPTION
         else:
             self.description = description
+                    
+        if rlist is None:
+                self.rlist = []
+        else:
+                self.rlist = rlist          
 
         self.startTime = datetime.datetime.now()
 
@@ -639,7 +674,7 @@ class HTMLTestRunner(Template_mixin):
         test(result)
         self.stopTime = datetime.datetime.now()
         self.generateReport(test, result)
-        print >>sys.stderr, '\nTime Elapsed: %s' % (self.stopTime-self.startTime)
+        print(sys.stderr, '\nTime Elapsed: %s' % (self.stopTime-self.startTime) , file=sys.stderr)
         return result
 
 
@@ -650,7 +685,8 @@ class HTMLTestRunner(Template_mixin):
         classes = []
         for n,t,o,e in result_list:
             cls = t.__class__
-            if not rmap.has_key(cls):
+            #if not rmap.has_key(cls):
+            if (not (cls in rmap.keys())):
                 rmap[cls] = []
                 classes.append(cls)
             rmap[cls].append((n,t,o,e))
@@ -666,9 +702,11 @@ class HTMLTestRunner(Template_mixin):
         startTime = str(self.startTime)[:19]
         duration = str(self.stopTime - self.startTime)
         status = []
+        
         if result.success_count: status.append('Pass %s'    % result.success_count)
         if result.failure_count: status.append('Failure %s' % result.failure_count)
         if result.error_count:   status.append('Error %s'   % result.error_count  )
+        #if result.skipped_count:   status.append('skipped %s'   % result.skipped_count  )
         if status:
             status = ' '.join(status)
         else:
@@ -696,8 +734,7 @@ class HTMLTestRunner(Template_mixin):
             ending = ending,
         )
         self.stream.write(output.encode('utf8'))
-
-
+	
     def _generate_stylesheet(self):
         return self.STYLESHEET_TMPL
 
@@ -710,11 +747,29 @@ class HTMLTestRunner(Template_mixin):
                     value = saxutils.escape(value),
                 )
             a_lines.append(line)
+            
+            
+        a_lines.append(self.HEADING_TABLE_REPO_HEADER_ROW)
+            
+        for repo2, rhead2, rhash2 in self.rlist:   
+            rhashshort2 = rhash2[0:6]
+            print(type(rhead2))
+            line = self.HEADING_TABLE_REPO_ROW % dict(
+                            repo = saxutils.escape(repo2),
+                            rhead = saxutils.escape(rhead2),
+                            rhash = saxutils.escape(rhash2),
+                            rhashshort = saxutils.escape(rhashshort2),
+                    )
+            a_lines.append(line)
+            
+        #a_lines.append("</table>")    
+            
         heading = self.HEADING_TMPL % dict(
             title = saxutils.escape(self.title),
             parameters = ''.join(a_lines),
             description = saxutils.escape(self.description),
         )
+        
         return heading
 
 
@@ -773,14 +828,20 @@ class HTMLTestRunner(Template_mixin):
         # o and e should be byte string because they are collected from stdout and stderr?
         if isinstance(o,str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # uo = unicode(o.encode('string_escape'))
-            uo = o.decode('latin-1')
+            #uo = unicode(o.encode('string_escape'))
+            #uo = o.decode('latin-1')
+            #uo = o.encode('latin-1')
+            uo = o#unicode_string.encode(o, 'utf-8')
+            #uo = bytes(o, 'utf-8')
         else:
             uo = o
         if isinstance(e,str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # ue = unicode(e.encode('string_escape'))
-            ue = e.decode('latin-1')
+            #ue = unicode(e.encode('string_escape'))
+            #ue = e.decode('latin-1')
+            #ue = e.encode('latin-1')
+            #ue = bytes(e, 'utf-8')
+            ue = e #unicode_string.encode(e, 'utf-8')
         else:
             ue = e
 
