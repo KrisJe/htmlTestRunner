@@ -41,6 +41,12 @@ class SampleTest0(unittest.TestCase):
         """        test description
         """
         pass
+    
+    @unittest.skip("This test has been skipped!")
+    def test_skipped_with_reason(self):
+        """        test description
+        """
+        pass    
 
 class SampleTest1(unittest.TestCase):
     """ A class that fails.

@@ -4,5 +4,3 @@ This is my own modification of it.
 
 Replaced the test runner by Wai Yip Tung, by runner.py to generate report.
 
-To do:
-	* The HTML report should also contain the number of skipped tests.

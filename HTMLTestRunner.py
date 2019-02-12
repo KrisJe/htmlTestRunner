@@ -62,20 +62,25 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-# URL: http://tungwaiyip.info/software/HTMLTestRunner.html
 
-__author__ = "Wai Yip Tung"
-__version__ = "0.8.3"
+
+__author__ = "Kristof Kiekens"
+__version__ = "0.8.4"
 
 
 """
 Change History
 
+Version 0.8.4 (by K. Kiekens)
+* Added skipped test to report
+* Added ""Skipped" test filter tag
+
 Version 0.8.3 (by K. Kiekens)
 * Modification for Python 3.x
 * Modified html report. Added link for code coverage and reference to the git repo and submodules.
 
-Version 0.8.2
+
+Version 0.8.2 (Wai Yip Tung - http://tungwaiyip.info/software/HTMLTestRunner.html)
 * Show output inline instead of popup window (Viorel Lupu).
 
 Version in 0.8.1
@@ -180,6 +185,7 @@ class Template_mixin(object):
     0: 'pass',
     1: 'fail',
     2: 'error',
+    3: 'skipped',
     }
 
     DEFAULT_TITLE = 'Unit Test Report'
@@ -201,30 +207,35 @@ class Template_mixin(object):
 <script language="javascript" type="text/javascript"><!--
 output_list = Array();
 
-/* level - 0:Summary; 1:Failed; 2:All */
+/* level - 0:Summary; 1:Failed; 2:All; 3:Skipped */
 function showCase(level) {
     trs = document.getElementsByTagName("tr");
     for (var i = 0; i < trs.length; i++) {
         tr = trs[i];
         id = tr.id;
-        if (id.substr(0,2) == 'ft') {
-            if (level < 1) {
-                tr.className = 'hiddenRow';
-            }
-            else {
-                tr.className = '';
-            }
+        
+        if((level==0) && ((id.substr(0,2) == 'pt') || (id.substr(0,2) == 'ft') || (id.substr(0,2) == 'st'))){
+            tr.className = 'hiddenRow';
         }
-        if (id.substr(0,2) == 'pt') {
-            if (level > 1) {
-                tr.className = '';
-            }
-            else {
-                tr.className = 'hiddenRow';
-            }
+           
+        if(level==1){
+          if (id.substr(0,2) == 'ft') tr.className = '';
+          if ((id.substr(0,2) == 'pt') || (id.substr(0,2) == 'st')) tr.className = 'hiddenRow';
         }
+        
+        if((level==2) && ((id.substr(0,2) == 'pt') || (id.substr(0,2) == 'ft') || (id.substr(0,2) == 'st'))){
+            tr.className = '';    
+        }
+        
+        if(level==3){
+          if (id.substr(0,2) == 'st') tr.className = '';
+          if ((id.substr(0,2) == 'ft') || (id.substr(0,2) == 'pt'))  tr.className = 'hiddenRow';
+        }   
+        
     }
 }
+
+
 
 
 function showClassDetail(cid, count) {
@@ -234,8 +245,14 @@ function showClassDetail(cid, count) {
         tid0 = 't' + cid.substr(1) + '.' + (i+1);
         tid = 'f' + tid0;
         tr = document.getElementById(tid);
+        console.log(tid);
+        console.log(tr);
         if (!tr) {
             tid = 'p' + tid0;
+            tr = document.getElementById(tid);
+        }
+        if (!tr) {
+            tid = 's' + tid0;
             tr = document.getElementById(tid);
         }
         id_list[i] = tid;
@@ -243,6 +260,7 @@ function showClassDetail(cid, count) {
             toHide = 0;
         }
     }
+    console.log(id_list);
     for (var i = 0; i < count; i++) {
         tid = id_list[i];
         if (toHide) {
@@ -446,6 +464,24 @@ a.popup_link:hover {
 
 
 
+    CLONE_REPO_STATE = """
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/controllers/lib/ajlib_ll.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/abcc.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/chibios.bit
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/py.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/auto2300Test/Blinky.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/ajlib_ll.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/CMSIS.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/CompactCom-host.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/hcc.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/jsmn.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/klib.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/micropython.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/RTT.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/StdPeriph_Driver.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/lib/STM32hal.git
+    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/SystemView.git
+    """
 
 
     # ------------------------------------------------------------------------
@@ -457,10 +493,12 @@ a.popup_link:hover {
 <a href='javascript:showCase(0)'>Summary</a>
 <a href='javascript:showCase(1)'>Failed</a>
 <a href='javascript:showCase(2)'>All</a>
+<a href='javascript:showCase(3)'>Skipped</a>
 </p>
 <table id='result_table'>
 <colgroup>
 <col align='left' />
+<col align='right' />
 <col align='right' />
 <col align='right' />
 <col align='right' />
@@ -473,6 +511,7 @@ a.popup_link:hover {
     <td>Pass</td>
     <td>Fail</td>
     <td>Error</td>
+    <td>Skipped</td>
     <td>View</td>
 </tr>
 %(test_list)s
@@ -482,6 +521,7 @@ a.popup_link:hover {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
+    <td>%(skipped)s</td>
     <td>&nbsp;</td>
 </tr>
 </table>
@@ -494,6 +534,7 @@ a.popup_link:hover {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
+    <td>%(skipped)s</td>
     <td><a href="javascript:showClassDetail('%(cid)s',%(count)s)">Detail</a></td>
 </tr>
 """ # variables: (style, desc, count, Pass, fail, error, cid)
@@ -565,7 +606,7 @@ class _TestResult(TestResult):
 
         # result is a list of result in 4 tuple
         # (
-        #   result code (0: success; 1: fail; 2: error),
+        #   result code (0: success; 1: fail; 2: error; 3:skipped),
         #   TestCase object,
         #   Test output (byte string),
         #   stack trace,
@@ -599,13 +640,13 @@ class _TestResult(TestResult):
 
 
     def stopTest(self, test):
-        # Usually one of addSuccess, addError or addFailure would have been called.
+        # Usually one of addSuccess, addError, addFailure, adSkip would have been called.
         # But there are some path in unittest that would bypass this.
         # We must disconnect stdout in stopTest(), which is guaranteed to be called.
         self.complete_output()
 
 
-    def addSuccess(self, test):
+    def addSuccess(self, test):  
         self.success_count += 1
         TestResult.addSuccess(self, test)
         output = self.complete_output()
@@ -643,6 +684,19 @@ class _TestResult(TestResult):
             sys.stderr.write('\n')
         else:
             sys.stderr.write('F')
+
+    def addSkip(self, test, reason):
+        self.skipped_count += 1
+        TestResult.addSkip(self,test, reason)
+        _, _exc_str = self.skipped[-1]
+        output = self.complete_output()
+        self.result.append((3, test, output, _exc_str))
+        if self.verbosity > 1:
+            sys.stderr.write('S  ')
+            sys.stderr.write(str(test))
+            sys.stderr.write('\n')
+        else:
+            sys.stderr.write('S')
 
 
 class HTMLTestRunner(Template_mixin):
@@ -706,7 +760,7 @@ class HTMLTestRunner(Template_mixin):
         if result.success_count: status.append('Pass %s'    % result.success_count)
         if result.failure_count: status.append('Failure %s' % result.failure_count)
         if result.error_count:   status.append('Error %s'   % result.error_count  )
-        #if result.skipped_count:   status.append('skipped %s'   % result.skipped_count  )
+        if result.skipped_count:   status.append('skipped %s'   % result.skipped_count  )
         if status:
             status = ' '.join(status)
         else:
@@ -734,7 +788,8 @@ class HTMLTestRunner(Template_mixin):
             ending = ending,
         )
         self.stream.write(output.encode('utf8'))
-	
+
+
     def _generate_stylesheet(self):
         return self.STYLESHEET_TMPL
 
@@ -778,11 +833,12 @@ class HTMLTestRunner(Template_mixin):
         sortedResult = self.sortResult(result.result)
         for cid, (cls, cls_results) in enumerate(sortedResult):
             # subtotal for a class
-            np = nf = ne = 0
+            np = nf = ne = ns =0
             for n,t,o,e in cls_results:
                 if n == 0: np += 1
                 elif n == 1: nf += 1
-                else: ne += 1
+                elif n == 2: ne += 1
+                else: ns += 1
 
             # format class description
             if cls.__module__ == "__main__":
@@ -795,10 +851,11 @@ class HTMLTestRunner(Template_mixin):
             row = self.REPORT_CLASS_TMPL % dict(
                 style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
                 desc = desc,
-                count = np+nf+ne,
+                count = np+nf+ne+ns,
                 Pass = np,
                 fail = nf,
                 error = ne,
+                skipped = ns,
                 cid = 'c%s' % (cid+1),
             )
             rows.append(row)
@@ -808,10 +865,11 @@ class HTMLTestRunner(Template_mixin):
 
         report = self.REPORT_TMPL % dict(
             test_list = ''.join(rows),
-            count = str(result.success_count+result.failure_count+result.error_count),
+            count = str(result.success_count+result.failure_count+result.error_count+result.skipped_count),
             Pass = str(result.success_count),
             fail = str(result.failure_count),
             error = str(result.error_count),
+            skipped = str(result.skipped_count),
         )
         return report
 
@@ -819,7 +877,20 @@ class HTMLTestRunner(Template_mixin):
     def _generate_report_test(self, rows, cid, tid, n, t, o, e):
         # e.g. 'pt1.1', 'ft1.1', etc
         has_output = bool(o or e)
-        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid+1,tid+1)
+        
+        if (n==0):
+            tid ='pt%s.%s' % (cid+1,tid+1)
+        elif (n==1):
+            tid = 'ft%s.%s' % (cid+1,tid+1)
+        elif (n==2):
+            tid = 'ft%s.%s' % (cid+1,tid+1)
+        else:
+            tid = 'st%s.%s' % (cid+1,tid+1)
+        
+        #tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid+1,tid+1)
+        
+        
+        
         name = t.id().split('.')[-1]
         doc = t.shortDescription() or ""
         desc = doc and ('%s: %s' % (name, doc)) or name
