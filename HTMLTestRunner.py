@@ -464,24 +464,7 @@ a.popup_link:hover {
 
 
 
-    CLONE_REPO_STATE = """
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/controllers/lib/ajlib_ll.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/abcc.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/chibios.bit
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/boards/py.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/auto2300Test/Blinky.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/ajlib_ll.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/CMSIS.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/CompactCom-host.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/hcc.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/jsmn.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/klib.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/micropython.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/RTT.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/StdPeriph_Driver.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/lib/STM32hal.git
-    git clone -b BRANCH_NAME --single-branch http://10.175.1.5:29418/lib/SystemView.git
-    """
+   
 
 
     # ------------------------------------------------------------------------
